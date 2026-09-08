@@ -3,11 +3,12 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import * as productStore from "@/lib/product-store";
 import { getDevFlags, subscribeDevFlags } from "@/lib/dev-flags";
+import type { ProductInput, SkuInput } from "@/lib/types";
 
 const INITIAL_LOAD_DELAY_MS = 500;
 
-export function useProducts() {
-  const products = useSyncExternalStore(
+export function useSkus() {
+  const state = useSyncExternalStore(
     productStore.subscribe,
     productStore.getSnapshot,
     productStore.getServerSnapshot
@@ -20,16 +21,20 @@ export function useProducts() {
     return () => clearTimeout(timer);
   }, []);
 
-  const sorted = [...products].sort(
+  const rows = productStore.toSkuRows(state);
+  const sorted = [...rows].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
   return {
-    products: sorted,
+    skuRows: sorted,
     isLoading: initialLoad || devFlags.forceLoading,
     isError: !initialLoad && devFlags.forceError,
-    createProduct: productStore.createProduct,
-    updateProduct: productStore.updateProduct,
-    getProduct: productStore.getProduct,
+    createProduct: (productInput: ProductInput, skuInput: SkuInput) =>
+      productStore.createProduct(productInput, skuInput),
+    updateSku: (id: string, productInput: ProductInput, skuInput: SkuInput) =>
+      productStore.updateSku(id, productInput, skuInput),
+    getSkuRow: productStore.getSkuRow,
+    getSiblingSkus: productStore.getSiblingSkus,
   };
 }

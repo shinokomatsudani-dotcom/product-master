@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SlidersHorizontal, X } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,8 @@ const STATUS_SELECT_ITEMS: Record<string, string> = {
   ...PUBLISH_STATUS_LABEL,
 };
 
+const KEYWORD_DEBOUNCE_MS = 300;
+
 export function ProductFiltersBar({ filters, onChange, onReset }: ProductFiltersBarProps) {
   // 価格帯・更新日の条件が既にかかっている状態で一覧に戻ってきたときは、
   // パネルを畳んだままにすると「条件がかかっていること」が見えなくなるため自動的に開く。
@@ -45,13 +47,31 @@ export function ProductFiltersBar({ filters, onChange, onReset }: ProductFilters
   const active = hasActiveFilters(filters);
   const advancedActive = hasAdvancedFilters(filters);
 
+  // キーワード入力はローカルstateで受けてからデバウンスしてURLに反映する。
+  // onChangeのたびにrouter.replace()していると再描画のタイミングでIMEの変換が
+  // 中断され、日本語入力の最初の1文字が確定できなくなる問題があったため。
+  const [keyword, setKeyword] = useState(filters.q);
+  const [syncedQ, setSyncedQ] = useState(filters.q);
+  if (filters.q !== syncedQ) {
+    setSyncedQ(filters.q);
+    setKeyword(filters.q);
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (keyword !== filters.q) onChange({ q: keyword });
+    }, KEYWORD_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyword]);
+
   return (
     <div className="space-y-2 rounded-xl border border-border bg-card p-3">
       <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="商品名・SKUで検索"
-          value={filters.q}
-          onChange={(e) => onChange({ q: e.target.value })}
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
           className="w-full sm:w-56"
         />
         <Select
@@ -130,46 +150,46 @@ export function ProductFiltersBar({ filters, onChange, onReset }: ProductFilters
           )}
         >
           <div className="grid grid-cols-1 gap-3 pt-2 pb-1 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">価格帯</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={100}
-                placeholder="下限"
-                value={filters.priceMin}
-                onChange={(e) => onChange({ priceMin: e.target.value })}
-              />
-              <span className="text-muted-foreground">〜</span>
-              <Input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={100}
-                placeholder="上限"
-                value={filters.priceMax}
-                onChange={(e) => onChange({ priceMax: e.target.value })}
-              />
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">価格帯</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={100}
+                  placeholder="下限"
+                  value={filters.priceMin}
+                  onChange={(e) => onChange({ priceMin: e.target.value })}
+                />
+                <span className="text-muted-foreground">〜</span>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={100}
+                  placeholder="上限"
+                  value={filters.priceMax}
+                  onChange={(e) => onChange({ priceMax: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">更新日</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={filters.updatedFrom}
-                onChange={(e) => onChange({ updatedFrom: e.target.value })}
-              />
-              <span className="text-muted-foreground">〜</span>
-              <Input
-                type="date"
-                value={filters.updatedTo}
-                onChange={(e) => onChange({ updatedTo: e.target.value })}
-              />
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">更新日</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={filters.updatedFrom}
+                  onChange={(e) => onChange({ updatedFrom: e.target.value })}
+                />
+                <span className="text-muted-foreground">〜</span>
+                <Input
+                  type="date"
+                  value={filters.updatedTo}
+                  onChange={(e) => onChange({ updatedTo: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
           </div>
         </CollapsibleContent>
       </Collapsible>
