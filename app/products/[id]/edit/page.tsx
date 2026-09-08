@@ -6,14 +6,14 @@ import { CaretLeft, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { ProductForm } from "@/components/product-form";
 import { EmptyState } from "@/components/empty-state";
-import { useProducts } from "@/hooks/use-products";
-import type { ProductInput } from "@/lib/types";
+import { useSkus } from "@/hooks/use-skus";
+import type { ProductInput, SkuInput } from "@/lib/types";
 
 export default function EditProductPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { isLoading, getProduct, updateProduct } = useProducts();
-  const product = getProduct(params.id);
+  const { isLoading, getSkuRow, getSiblingSkus, updateSku } = useSkus();
+  const row = getSkuRow(params.id);
 
   if (isLoading) {
     return (
@@ -24,7 +24,7 @@ export default function EditProductPage() {
     );
   }
 
-  if (!product) {
+  if (!row) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col p-4 sm:p-6">
         <EmptyState
@@ -41,19 +41,24 @@ export default function EditProductPage() {
     );
   }
 
-  const initialValue: ProductInput = {
-    name: product.name,
-    sku: product.sku,
-    category: product.category,
-    brand: product.brand,
-    price: product.price,
-    salePrice: product.salePrice,
-    stock: product.stock,
-    status: product.status,
-    imageUrl: product.imageUrl,
-    description: product.description,
-    sizes: product.sizes,
-    colors: product.colors,
+  const siblingCount = getSiblingSkus(row.product.id).length - 1;
+
+  const initialProduct: ProductInput = {
+    name: row.product.name,
+    category: row.product.category,
+    brand: row.product.brand,
+    imageUrl: row.product.imageUrl,
+    description: row.product.description,
+  };
+
+  const initialSku: SkuInput = {
+    skuCode: row.skuCode,
+    size: row.size,
+    color: row.color,
+    price: row.price,
+    salePrice: row.salePrice,
+    stock: row.stock,
+    status: row.status,
   };
 
   return (
@@ -64,16 +69,22 @@ export default function EditProductPage() {
       </Button>
       <div>
         <h1 className="text-lg font-bold text-foreground">商品を編集</h1>
-        <p className="text-sm text-muted-foreground">{product.sku}</p>
+        <p className="text-sm text-muted-foreground">{row.skuCode}</p>
       </div>
 
       <ProductForm
-        initialValue={initialValue}
+        initialProduct={initialProduct}
+        initialSku={initialSku}
         submitLabel="保存する"
+        sharedNote={
+          siblingCount > 0
+            ? `この商品の他の${siblingCount}件のバリエーションにも反映されます`
+            : undefined
+        }
         onCancel={() => router.back()}
-        onSubmit={(input) => {
-          updateProduct(product.id, input);
-          router.push(`/products/${product.id}`);
+        onSubmit={(productInput, skuInput) => {
+          updateSku(row.id, productInput, skuInput);
+          router.push(`/products/${row.id}`);
         }}
       />
     </div>

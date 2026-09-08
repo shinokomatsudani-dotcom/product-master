@@ -9,10 +9,10 @@ import { ProductFiltersBar } from "@/components/product-filters";
 import { ProductTable } from "@/components/product-table";
 import { ProductTableSkeleton } from "@/components/product-table-skeleton";
 import { EmptyState } from "@/components/empty-state";
-import { useProducts } from "@/hooks/use-products";
+import { useSkus } from "@/hooks/use-skus";
 import {
   DEFAULT_FILTERS,
-  filterProducts,
+  filterSkuRows,
   type ProductFilters,
 } from "@/lib/filter-products";
 
@@ -27,7 +27,7 @@ export default function ProductsPage() {
 function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { products, isLoading, isError } = useProducts();
+  const { skuRows, isLoading, isError } = useSkus();
 
   const filters: ProductFilters = useMemo(
     () => ({
@@ -65,7 +65,7 @@ function ProductsPageContent() {
     router.replace("/products", { scroll: false });
   }, [router]);
 
-  const filtered = useMemo(() => filterProducts(products, filters), [products, filters]);
+  const filtered = useMemo(() => filterSkuRows(skuRows, filters), [skuRows, filters]);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6">
@@ -98,7 +98,7 @@ function ProductsPageContent() {
           />
         ) : isLoading ? (
           <ProductTableSkeleton />
-        ) : products.length === 0 ? (
+        ) : skuRows.length === 0 ? (
           <EmptyState
             icon={<Package size={24} />}
             title="商品がまだ登録されていません"
@@ -118,9 +118,9 @@ function ProductsPageContent() {
         ) : (
           <>
             <div className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
-              {filtered.length}件 / 全{products.length}件
+              {filtered.length}件 / 全{skuRows.length}件
             </div>
-            <ProductTable products={filtered} />
+            <ProductTable rows={filtered} />
           </>
         )}
       </div>

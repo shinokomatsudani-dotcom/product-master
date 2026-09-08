@@ -11,11 +11,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
-import { formatDate } from "@/lib/format";
-import type { Product } from "@/lib/types";
+import { variationLabel, type SkuRow } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function ProductTable({ products }: { products: Product[] }) {
+export function ProductTable({ rows }: { rows: SkuRow[] }) {
   const router = useRouter();
 
   return (
@@ -25,38 +24,38 @@ export function ProductTable({ products }: { products: Product[] }) {
           <TableHead>商品名</TableHead>
           <TableHead>SKU</TableHead>
           <TableHead>カテゴリ</TableHead>
+          <TableHead>バリエーション</TableHead>
           <TableHead className="text-right">在庫数</TableHead>
           <TableHead>公開状態</TableHead>
-          <TableHead>更新日</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {products.map((product) => {
-          const needsAttention = product.status === "published" && product.stock === 0;
+        {rows.map((row) => {
+          const needsAttention = row.status === "published" && row.stock === 0;
           return (
             <TableRow
-              key={product.id}
-              onClick={() => router.push(`/products/${product.id}`)}
+              key={row.id}
+              onClick={() => router.push(`/products/${row.id}`)}
               className={cn("cursor-pointer", needsAttention && "bg-warning/10 hover:bg-warning/15")}
             >
-              <TableCell className="font-medium text-foreground">{product.name}</TableCell>
-              <TableCell className="text-muted-foreground">{product.sku}</TableCell>
-              <TableCell className="text-muted-foreground">{product.category}</TableCell>
+              <TableCell className="font-medium text-foreground">{row.product.name}</TableCell>
+              <TableCell className="text-muted-foreground">{row.skuCode}</TableCell>
+              <TableCell className="text-muted-foreground">{row.product.category}</TableCell>
+              <TableCell className="text-muted-foreground">{variationLabel(row)}</TableCell>
               <TableCell
                 className={cn(
                   "text-right tabular-nums",
-                  product.stock === 0 ? "font-medium text-destructive" : "text-foreground"
+                  row.stock === 0 ? "font-medium text-destructive" : "text-foreground"
                 )}
               >
                 <span className="inline-flex items-center gap-1 justify-end">
                   {needsAttention && <Warning weight="fill" className="size-3.5" />}
-                  {product.stock}
+                  {row.stock}
                 </span>
               </TableCell>
               <TableCell>
-                <StatusBadge status={product.status} />
+                <StatusBadge status={row.status} />
               </TableCell>
-              <TableCell className="text-muted-foreground">{formatDate(product.updatedAt)}</TableCell>
             </TableRow>
           );
         })}
